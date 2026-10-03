@@ -60,6 +60,8 @@ function addLayers(map: MapLibre, dark: boolean) {
     id: 'vehicle-dot',
     type: 'circle',
     source: 'vehicles',
+    // Trains are few and buses many: draw trains on top.
+    layout: { 'circle-sort-key': byMode(0, 1) as never },
     paint: {
       'circle-radius': radius as never,
       'circle-color': color as never,

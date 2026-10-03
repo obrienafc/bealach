@@ -3,12 +3,17 @@ import routesJson from '@/data/routes.json';
 import type { Vehicle } from './vehicles';
 
 // NTA's GTFS-Realtime vehicle positions: Dublin Bus, Bus Éireann, Go-Ahead
-// and others. Needs a free key from developer.nationaltransport.ie.
+// and others (no Luas at present, though it's handled if it appears). Needs
+// a free key from developer.nationaltransport.ie.
 const URL = 'https://api.nationaltransport.ie/gtfsr/v2/Vehicles?format=json';
 
 // Built by scripts/update-routes.mjs; `to` is the usual destination per direction.
 type Route = { name: string; long: string; operator: string; type: number; to: (string | null)[] };
 const ROUTES = routesJson as unknown as Record<string, Route>;
+
+// About 1% of vehicles stop reporting without leaving the feed (parked or out
+// of service). Past this age, a position is more likely wrong than late.
+const MAX_AGE_S = 600;
 
 export const busesEnabled = () => Boolean(process.env.NTA_API_KEY);
 
@@ -20,14 +25,19 @@ type Entity = {
     trip?: { route_id?: string; routeId?: string; direction_id?: number; directionId?: number };
     position?: { latitude: number; longitude: number };
     vehicle?: { id?: string; label?: string };
+    /** Seconds since the epoch, as a string or number. */
+    timestamp?: string | number;
   };
 };
 
-export function toVehicle(e: Entity): Vehicle | null {
+/** `now` is the feed's own timestamp in seconds, so clock skew doesn't matter. */
+export function toVehicle(e: Entity, now?: number): Vehicle | null {
   const v = e.vehicle;
   const lat = Number(v?.position?.latitude);
   const lon = Number(v?.position?.longitude);
   if (!v || !lat || !lon) return null;
+  const seen = Number(v.timestamp) || undefined;
+  if (now && seen && now - seen > MAX_AGE_S) return null;
 
   const routeId = v.trip?.route_id ?? v.trip?.routeId;
   const route = routeId ? ROUTES[routeId] : undefined;
@@ -45,6 +55,7 @@ export function toVehicle(e: Entity): Vehicle | null {
     title: route?.long ?? 'Unknown route',
     to,
     operator: route?.operator.replace(/^Bus Átha Cliath – /, '').replace(/^LUAS$/, 'Luas'),
+    seen: seen ? seen * 1000 : undefined,
   };
 }
 
@@ -57,6 +68,7 @@ export async function fetchBuses(): Promise<Vehicle[]> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`NTA returned ${res.status}`);
-  const data = (await res.json()) as { entity?: Entity[] };
-  return (data.entity ?? []).map(toVehicle).filter((v): v is Vehicle => v !== null);
+  const data = (await res.json()) as { header?: { timestamp?: string | number }; entity?: Entity[] };
+  const now = Number(data.header?.timestamp) || Date.now() / 1000;
+  return (data.entity ?? []).map((e) => toVehicle(e, now)).filter((v): v is Vehicle => v !== null);
 }

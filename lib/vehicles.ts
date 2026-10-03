@@ -21,6 +21,8 @@ export type Vehicle = {
   operator?: string;
   /** Scheduled departure from origin, "HH:MM". */
   departed?: string;
+  /** When the vehicle last reported its position (epoch ms). Buses only. */
+  seen?: number;
 };
 
 export type Feed = { vehicles: Vehicle[]; updated: string };
@@ -31,7 +33,9 @@ export const MODES: { mode: Mode; label: string; plural: string; color: string }
   { mode: 'commuter', label: 'Commuter', plural: 'Commuter', color: '#e69f00' },
   { mode: 'intercity', label: 'Intercity', plural: 'Intercity', color: '#cc79a7' },
   { mode: 'luas', label: 'Luas', plural: 'Luas', color: '#7c3aed' },
-  { mode: 'bus', label: 'Bus', plural: 'Buses', color: '#d55e00' },
+  // Blue, not Okabe–Ito's vermilion, which sat too close to Commuter orange
+  // once a thousand buses were on the map.
+  { mode: 'bus', label: 'Bus', plural: 'Buses', color: '#0072b2' },
 ];
 
 export const MODE_BY_ID = Object.fromEntries(MODES.map((m) => [m.mode, m])) as Record<

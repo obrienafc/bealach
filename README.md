@@ -4,12 +4,12 @@
 
 Bealach (Irish for "way" or "route", said *BAL-ukh*) shows every Irish Rail,
 DART and commuter train moving right now, with how late it's running, where it
-was last seen and its next stop. Add a free NTA key and Dublin Bus, Bus
-Éireann, Go-Ahead and Luas appear too.
+was last seen and its next stop. Add a free NTA key and over a thousand Dublin
+Bus, Bus Éireann and Go-Ahead buses appear too.
 
-[![Bealach showing an Intercity train to Dublin Heuston, 10 minutes late, between Clonydonnin and Clara](docs/screenshot.png)](docs/screenshot.png)
+[![Bealach showing 1,134 trains and buses across Ireland, with buses clustered around Dublin, Galway and Limerick](docs/screenshot.png)](docs/screenshot.png)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fobrienafc%2Fbealach&project-name=bealach&env=NTA_API_KEY&envDescription=Optional%3A%20free%20key%20from%20developer.nationaltransport.ie%20for%20buses%20and%20Luas&envLink=https%3A%2F%2Fdeveloper.nationaltransport.ie)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fobrienafc%2Fbealach&project-name=bealach&env=NTA_API_KEY&envDescription=Optional%3A%20free%20key%20from%20developer.nationaltransport.ie%20for%20buses&envLink=https%3A%2F%2Fdeveloper.nationaltransport.ie)
 
 ## Features
 
@@ -32,12 +32,13 @@ was last seen and its next stop. Add a free NTA key and Dublin Bus, Bus
 | Layer | Source | Key |
 | ----- | ------ | --- |
 | Trains (DART, Commuter, Intercity) | [Irish Rail realtime API](https://api.irishrail.ie/realtime/) | None |
-| Buses and Luas | [NTA GTFS-Realtime](https://developer.nationaltransport.ie) | Free, set `NTA_API_KEY` |
+| Buses (Dublin Bus, Bus Éireann, Go-Ahead) | [NTA GTFS-Realtime](https://developer.nationaltransport.ie) | Free, set `NTA_API_KEY` |
 | Route names and destinations | NTA GTFS timetable, read at build time | None |
 | Map | [OpenFreeMap](https://openfreemap.org), © OpenMapTiles, © OpenStreetMap contributors | None |
 
-Irish Rail reports where each train last checked in, usually a station, rather
-than GPS. Trains therefore move in hops between stations, and Bealach glides
+Bus positions are GPS, refreshed about every 30 seconds; buses that haven't
+reported for 10 minutes are hidden. Irish Rail reports where each train last
+checked in, usually a station, rather than GPS. Trains therefore move in hops between stations, and Bealach glides
 them along so the motion is easy to follow.
 
 ## How it works
@@ -62,7 +63,7 @@ npm install
 npm run dev
 ```
 
-Buses and Luas need an NTA key: register at
+Buses need an NTA key: register at
 [developer.nationaltransport.ie](https://developer.nationaltransport.ie),
 subscribe to the GTFS-R API, and set it as `NTA_API_KEY` (in `.env.local`, or
 in your host's environment variables). No rebuild is needed; buses appear on

@@ -112,8 +112,10 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
     [wide, Boolean(selected)], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  // Modes this instance can show: trains always; buses and Luas with an NTA key.
-  const modes = MODES.filter((m) => busesEnabled || (m.mode !== 'bus' && m.mode !== 'luas'));
+  // Trains always; buses with an NTA key. The NTA feed has no Luas trams at
+  // present, so their filter appears only if some do.
+  const hasLuas = buses.vehicles.some((v) => v.mode === 'luas');
+  const modes = MODES.filter((m) => (m.mode === 'bus' ? busesEnabled : m.mode === 'luas' ? hasLuas : true));
   const loading = trains.loading || buses.loading;
   const failed = trains.error && trains.vehicles.length === 0 && !trains.loading;
   const updated = trains.updated;
@@ -261,7 +263,7 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
         }} />}
 
         <footer className="credits">
-          Train data: Iarnród Éireann{busesEnabled ? '. Bus and Luas data: NTA, CC BY 4.0' : ''}.{' '}
+          Train data: Iarnród Éireann{busesEnabled ? '. Bus data: NTA, CC BY 4.0' : ''}.{' '}
           Built by <a href="https://patrickob.tech">Patrick O’Brien</a>.
         </footer>
       </section>
@@ -269,6 +271,7 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
       {selected && (
         <VehicleCard
           vehicle={selected}
+          now={now}
           follow={follow}
           onFollow={() => setFollow((f) => !f)}
           onClose={() => select(null)}
@@ -345,11 +348,13 @@ function VehicleList({
 
 function VehicleCard({
   vehicle: v,
+  now,
   follow,
   onFollow,
   onClose,
 }: {
   vehicle: Vehicle;
+  now: number;
   follow: boolean;
   onFollow: () => void;
   onClose: () => void;
@@ -405,6 +410,12 @@ function VehicleCard({
           <div>
             <dt>Operator</dt>
             <dd>{v.operator}</dd>
+          </div>
+        )}
+        {v.seen && (
+          <div>
+            <dt>Position from</dt>
+            <dd>{ago(new Date(v.seen), now)}</dd>
           </div>
         )}
       </dl>
