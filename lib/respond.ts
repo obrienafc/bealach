@@ -6,9 +6,11 @@ import type { Feed, Vehicle } from './vehicles';
  * request per `fresh` seconds, and a slow or failed upstream never blocks
  * a visitor while a recent copy exists.
  */
-export async function feedResponse(load: () => Promise<Vehicle[]>, fresh: number) {
+export async function feedResponse(load: () => Promise<Vehicle[] | Feed>, fresh: number) {
   try {
-    const body: Feed = { vehicles: await load(), updated: new Date().toISOString() };
+    const loaded = await load();
+    // A loader may serve an older copy (see lib/nta.ts) and say how old.
+    const body: Feed = Array.isArray(loaded) ? { vehicles: loaded, updated: new Date().toISOString() } : loaded;
     return Response.json(body, {
       headers: { 'Cache-Control': `public, max-age=0, s-maxage=${fresh}, stale-while-revalidate=${fresh * 4}` },
     });

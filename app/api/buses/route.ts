@@ -7,5 +7,5 @@ export function GET() {
   if (!busesEnabled()) {
     return Response.json({ error: 'Buses aren’t enabled on this instance.' }, { status: 404 });
   }
-  return feedResponse(fetchBuses, 20);
+  return feedResponse(fetchBuses, 45);
 }

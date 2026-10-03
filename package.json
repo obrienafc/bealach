@@ -7,7 +7,7 @@
   "scripts": {
     "postinstall": "node scripts/copy-maplibre.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/update-routes.mjs",
+    "prebuild": "node scripts/update-routes.mjs && node scripts/update-luas.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"

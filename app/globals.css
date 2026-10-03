@@ -612,6 +612,11 @@ button {
   font-size: var(--t-callout);
   font-weight: 500;
 }
+.card-note {
+  font-size: var(--t-caption);
+  color: var(--text-2);
+  margin-top: calc(-1 * var(--s2));
+}
 .facts {
   display: grid;
   gap: var(--s2);

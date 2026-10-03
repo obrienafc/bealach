@@ -11,6 +11,7 @@ import { useFeed } from './useFeed';
 
 const TRAINS_EVERY = 20_000;
 const BUSES_EVERY = 30_000;
+const LUAS_EVERY = 30_000;
 // Irish Rail refreshes about once a minute; after this long, say so.
 const STALE_AFTER = 3 * 60_000;
 
@@ -54,6 +55,7 @@ function readParams() {
 export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
   const trains = useFeed('/api/trains', TRAINS_EVERY);
   const buses = useFeed(busesEnabled ? '/api/buses' : null, BUSES_EVERY);
+  const trams = useFeed(busesEnabled ? '/api/luas' : null, LUAS_EVERY);
   const dark = useIsDark();
   const reducedMotion = useReducedMotion();
   const now = useNow(5_000);
@@ -93,7 +95,10 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
     return () => removeEventListener('resize', measure);
   }, []);
 
-  const all = useMemo(() => [...trains.vehicles, ...buses.vehicles], [trains.vehicles, buses.vehicles]);
+  const all = useMemo(
+    () => [...trains.vehicles, ...trams.vehicles, ...buses.vehicles],
+    [trains.vehicles, trams.vehicles, buses.vehicles],
+  );
   const searched = useMemo(() => all.filter((v) => matches(v, query.trim())), [all, query]);
   const visible = useMemo(() => searched.filter((v) => !hidden.has(v.mode)), [searched, hidden]);
   const counts = useMemo(() => {
@@ -112,11 +117,9 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
     [wide, Boolean(selected)], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  // Trains always; buses with an NTA key. The NTA feed has no Luas trams at
-  // present, so their filter appears only if some do.
-  const hasLuas = buses.vehicles.some((v) => v.mode === 'luas');
-  const modes = MODES.filter((m) => (m.mode === 'bus' ? busesEnabled : m.mode === 'luas' ? hasLuas : true));
-  const loading = trains.loading || buses.loading;
+  // Trains always; buses and Luas with an NTA key.
+  const modes = MODES.filter((m) => busesEnabled || (m.mode !== 'bus' && m.mode !== 'luas'));
+  const loading = trains.loading || buses.loading || trams.loading;
   const failed = trains.error && trains.vehicles.length === 0 && !trains.loading;
   const updated = trains.updated;
   const stale = updated ? now - updated.getTime() > STALE_AFTER : false;
@@ -263,7 +266,7 @@ export function Bealach({ busesEnabled }: { busesEnabled: boolean }) {
         }} />}
 
         <footer className="credits">
-          Train data: Iarnród Éireann{busesEnabled ? '. Bus data: NTA, CC BY 4.0' : ''}.{' '}
+          Train data: Iarnród Éireann{busesEnabled ? '. Bus and Luas data: NTA, CC BY 4.0' : ''}.{' '}
           Built by <a href="https://patrickob.tech">Patrick O’Brien</a>.
         </footer>
       </section>
@@ -380,6 +383,9 @@ function VehicleCard({
       </div>
 
       {delay && <p className={`card-delay ${(v.delay ?? 0) >= 5 ? 'late' : ''}`}>{delay}</p>}
+      {v.estimated && (
+        <p className="card-note">Luas trams don’t share their location, so this is estimated from the timetable and live delays.</p>
+      )}
 
       <dl className="facts">
         {v.title && v.to && (
@@ -396,7 +402,7 @@ function VehicleCard({
         )}
         {v.status && (
           <div>
-            <dt>Last seen</dt>
+            <dt>{v.estimated ? 'Now' : 'Last seen'}</dt>
             <dd>{v.status}</dd>
           </div>
         )}

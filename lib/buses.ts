@@ -1,11 +1,11 @@
 import 'server-only';
 import routesJson from '@/data/routes.json';
-import type { Vehicle } from './vehicles';
+import { ntaFeed } from './nta';
+import type { Feed, Vehicle } from './vehicles';
 
 // NTA's GTFS-Realtime vehicle positions: Dublin Bus, Bus Éireann, Go-Ahead
-// and others (no Luas at present, though it's handled if it appears). Needs
-// a free key from developer.nationaltransport.ie.
-const URL = 'https://api.nationaltransport.ie/gtfsr/v2/Vehicles?format=json';
+// and others. Luas isn't in this feed; see lib/luas.ts. Needs a free key from
+// developer.nationaltransport.ie.
 
 // Built by scripts/update-routes.mjs; `to` is the usual destination per direction.
 type Route = { name: string; long: string; operator: string; type: number; to: (string | null)[] };
@@ -59,16 +59,12 @@ export function toVehicle(e: Entity, now?: number): Vehicle | null {
   };
 }
 
-export async function fetchBuses(): Promise<Vehicle[]> {
-  const key = process.env.NTA_API_KEY;
-  if (!key) return [];
-  const res = await fetch(URL, {
-    headers: { 'x-api-key': key, 'Cache-Control': 'no-cache' },
-    signal: AbortSignal.timeout(10_000),
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`NTA returned ${res.status}`);
-  const data = (await res.json()) as { header?: { timestamp?: string | number }; entity?: Entity[] };
-  const now = Number(data.header?.timestamp) || Date.now() / 1000;
-  return (data.entity ?? []).map((e) => toVehicle(e, now)).filter((v): v is Vehicle => v !== null);
+export async function fetchBuses(): Promise<Feed> {
+  if (!busesEnabled()) return { vehicles: [], updated: new Date().toISOString() };
+  const { data, at } = await ntaFeed<{ header?: { timestamp?: string | number }; entity?: Entity[] }>('Vehicles');
+  const now = Number(data.header?.timestamp) || at / 1000;
+  return {
+    vehicles: (data.entity ?? []).map((e) => toVehicle(e, now)).filter((v): v is Vehicle => v !== null),
+    updated: new Date(at).toISOString(),
+  };
 }

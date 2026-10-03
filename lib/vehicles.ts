@@ -23,6 +23,8 @@ export type Vehicle = {
   departed?: string;
   /** When the vehicle last reported its position (epoch ms). Buses only. */
   seen?: number;
+  /** Position worked out from the timetable and live delays (Luas). */
+  estimated?: boolean;
 };
 
 export type Feed = { vehicles: Vehicle[]; updated: string };
