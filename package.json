@@ -1,0 +1,33 @@
+{
+  "name": "bealach",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ireland's trains and buses on a live map.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "postinstall": "node scripts/copy-maplibre.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/update-routes.mjs",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.2",
+    "lucide-react": "^1.51.0",
+    "maplibre-gl": "^6.11.2",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
